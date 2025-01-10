@@ -2,70 +2,94 @@ const inputText = document.getElementById('inputText');
 const timeDisplay = document.getElementById('time');
 const speedDisplay = document.getElementById('speed');
 const errorsDisplay = document.getElementById('errors');
+const sampleText = document.getElementById('sampleText').textContent;
 
 let startTime;
+let elapsedTime = 0;
 let timerInterval;
-let errors = 0;
+let errorCount = 0;
 
-// Mock API for spelling check
-async function checkSpelling(word) {
-    // Simulate an API call with a delay
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // Mock logic: Assume words longer than 5 characters are correct
-            const isCorrect = word.length <= 5 || Math.random() > 0.3;
-            resolve(isCorrect);
-        }, 100); // Simulate API response delay
-    });
+function formatTime(milliseconds) {
+    const hours = Math.floor(milliseconds / 3600000);
+    const minutes = Math.floor((milliseconds % 3600000) / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-inputText.addEventListener('input', async () => {
-    if (!startTime) {
-        startTime = new Date();
-        timerInterval = setInterval(updateTime, 1000);
-    }
-    await checkSpellingErrors();
-    calculateSpeed();
-});
-
-function updateTime() {
-    const currentTime = new Date();
-    const elapsedTime = Math.floor((currentTime - startTime) / 1000);
-    timeDisplay.textContent = elapsedTime;
+function updateDisplay() {
+    document.getElementById('display').textContent = formatTime(elapsedTime);
+    timeDisplay.textContent = Math.floor(elapsedTime / 1000);
 }
 
-async function checkSpellingErrors() {
-    const inputWords = inputText.value.split(' ');
-    errors = 0;
+function startTimer() {
+    startTime = Date.now() - elapsedTime;
+    timerInterval = setInterval(() => {
+        elapsedTime = Date.now() - startTime;
+        updateDisplay();
+    }, 1000);
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('pauseBtn').disabled = false;
+}
 
-    for (let i = 0; i < inputWords.length; i++) {
-        const word = inputWords[i].trim();
-        if (word) {
-            const isCorrect = await checkSpelling(word);
-            if (!isCorrect) {
-                errors++;
-            }
-        }
-    }
+function pauseTimer() {
+    clearInterval(timerInterval);
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('pauseBtn').disabled = true;
+}
 
-    errorsDisplay.textContent = errors;
+function resetTimer() {
+    clearInterval(timerInterval);
+    elapsedTime = 0;
+    updateDisplay();
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('pauseBtn').disabled = true;
+}
+
+function resetAll() {
+    resetTimer();
+    inputText.value = '';
+    timeDisplay.textContent = 0;
+    speedDisplay.textContent = 0;
+    errorsDisplay.textContent = 0;
+    errorCount = 0;
 }
 
 function calculateSpeed() {
-    const inputWords = inputText.value.split(' ');
-    const currentTime = new Date();
-    const elapsedTime = (currentTime - startTime) / 1000 / 60; // in minutes
-    const speed = Math.floor(inputWords.length / elapsedTime);
+    const totalCharacters = inputText.value.length; // Count all characters including spaces
+    const elapsedTimeMinutes = elapsedTime / 1000 / 60; // Convert milliseconds to minutes
+    const speed = elapsedTimeMinutes > 0 ? Math.floor(totalCharacters / 5 / elapsedTimeMinutes) : 0;
     speedDisplay.textContent = speed;
 }
 
-// Reset the test if needed
-inputText.addEventListener('focus', () => {
-    if (inputText.value === '') {
-        clearInterval(timerInterval);
-        startTime = null;
-        timeDisplay.textContent = 0;
-        speedDisplay.textContent = 0;
-        errorsDisplay.textContent = 0;
-    }
+function checkErrors() {
+    const inputWords = inputText.value.split(/\s+/);
+    const sampleWords = sampleText.split(/\s+/);
+    
+    errorCount = 0; // Reset total error count
+    
+    inputWords.forEach((word, index) => {
+        if (sampleWords[index] && word !== sampleWords[index]) {
+            errorCount++;
+        }
+    });
+
+    errorsDisplay.textContent = errorCount;
+}
+
+// Debounce input event to optimize performance
+let debounceTimeout;
+inputText.addEventListener('input', () => {
+    if (!startTime) startTimer();
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+        checkErrors();
+        calculateSpeed();
+    }, 300);
 });
+
+document.getElementById('startBtn').addEventListener('click', startTimer);
+document.getElementById('pauseBtn').addEventListener('click', pauseTimer);
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+// Initialize the pause button as disabled
+document.getElementById('pauseBtn').disabled = true;
