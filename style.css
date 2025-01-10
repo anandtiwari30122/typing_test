@@ -3,7 +3,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-/*     height: 100vh; */
+    height: 100vh;
     margin: 0;
     background-color: #f4f4f4;
 }
@@ -11,7 +11,7 @@ body {
 .container {
     text-align: center;
     background-color: #fff;
-/*     padding: 50px !important; */
+    padding: 50px !important;
     min-width: 100vw;
     min-height: 100vh;
     border-radius: 10px;
@@ -44,4 +44,19 @@ body {
 .error {
     color: red;
     text-decoration: underline;
+}
+.stopwatch {
+    text-align: center;
+}
+
+.display {
+    font-size: 2em;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    margin: 5px;
+    cursor: pointer;
 }
